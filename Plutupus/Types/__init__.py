@@ -10,4 +10,5 @@ from .PTuple import PTuple
 from .PubKeyHash import PubKeyHash
 from .TokenName import TokenName
 from .TxOutRef import TxOutRef
+from .Value import Value
 

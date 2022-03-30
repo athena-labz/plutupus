@@ -1,11 +1,11 @@
 import copy
 import json
 
-from AssetClass import AssetClass
-from CurrencySymbol import CurrencySymbol
-from TokenName import TokenName
-from AssocMap import AssocMap
-from Integer import Integer
+from Types.AssetClass import AssetClass
+from Types.CurrencySymbol import CurrencySymbol
+from Types.TokenName import TokenName
+from Types.AssocMap import AssocMap
+from Types.Integer import Integer
 
 
 class Value(object):
