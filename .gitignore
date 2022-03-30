@@ -4,3 +4,4 @@ plutupus.egg-info/
 plutupus
 setup.py
 .pytest_cache
+__pycache__
