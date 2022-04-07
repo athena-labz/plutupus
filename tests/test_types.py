@@ -1,6 +1,6 @@
 import json
 import pytest
-import Types
+from Plutupus import Types
 
 
 def test_address_success():

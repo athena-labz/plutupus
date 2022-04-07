@@ -1,47 +1,55 @@
+from __future__ import annotations
+
+from typing import List, Dict
+
+from Plutupus.Types.TxOutRef import TxOutRef
+from Plutupus.Types.Value import Value
+
+
 class TxBody(object):
 
     def __init__(self, era, magic):
-        self.__era = era
-        self.__magic = magic
+        self.era = era
+        self.magic = magic
 
         self.setup()
 
     def setup(self):
         # utxo
-        self.__collateral = None
+        self.collateral = None
 
         # list of utxos
-        self.__inputs = []
+        self.inputs = []
 
         # address
-        self.__change = None
+        self.change = None
 
         # pubkeyhash
-        self.__required_signer = None
+        self.required_signer = None
 
         # outputs
-        self.__outputs = {}
+        self.outputs = {}
 
         # mint
-        self.__mint_scripts = []
-        self.__mint_value = {}
+        self.mint_scripts = []
+        self.mint_value = {}
 
-        self.__metadata_path = None
+        self.metadata_path = None
 
     def add_collateral(self, txhash, txix):
-        self.__collateral = {
+        self.collateral = {
             "hash": txhash,
             "index": txix
         }
 
     def add_input(self, txhash, txix):
-        self.__inputs.append({
+        self.inputs.append({
             "hash": txhash,
             "index": txix
         })
 
     def add_script_input(self, txhash, txix, script_path, redeemer_path, datum_path):
-        self.__inputs.append({
+        self.inputs.append({
             "hash": txhash,
             "index": txix,
             "script": script_path,
@@ -50,51 +58,51 @@ class TxBody(object):
         })
 
     def add_change(self, addr):
-        self.__change = addr
+        self.change = addr
 
     def add_required_signer(self, pubkeyhash):
-        self.__required_signer = pubkeyhash
+        self.required_signer = pubkeyhash
 
     def add_output(self, receiver, value):
-        self.__outputs[receiver] = {
+        self.outputs[receiver] = {
             "value": value.get(),
             "datum": None
         }
 
     def add_output_with_datum(self, receiver, value, datum_path):
-        self.__outputs[receiver] = {
+        self.outputs[receiver] = {
             "value": value.get(),
             "datum": datum_path
         }
 
     def add_mint_script(self, script_path, redeemer_path):
-        self.__mint_scripts.append({
+        self.mint_scripts.append({
             "script": script_path,
             "redeemer": redeemer_path
         })
 
     def set_mint_value(self, value):
-        self.__mint_value = value.get()
+        self.mint_value = value.get()
 
     def set_metadata(self, metadata_path):
-        self.__metadata_path = metadata_path
+        self.metadata_path = metadata_path
 
     def get(self):
         return {
-            "era": self.__era,
-            "magic": self.__magic,
-            "collateral": self.__collateral,
-            "inputs": self.__inputs,
-            "change": self.__change,
-            "required_signer": self.__required_signer,
-            "outputs": self.__outputs,
-            "mint_scripts": self.__mint_scripts,
-            "mint_value": self.__mint_value
+            "era": self.era,
+            "magic": self.magic,
+            "collateral": self.collateral,
+            "inputs": self.inputs,
+            "change": self.change,
+            "required_signer": self.required_signer,
+            "outputs": self.outputs,
+            "mint_scripts": self.mint_scripts,
+            "mint_value": self.mint_value
         }
 
     def cli(self, protocol_parameters_file, out_file):
         inputs = []
-        for _input in self.__inputs:
+        for _input in self.inputs:
             inputs.append(f"--tx-in {_input['hash']}#{_input['index']} \\")
             if "script" in _input and "redeemer" in _input and "datum" in _input:
                 inputs.append(f"--tx-in-script-file {_input['script']} \\")
@@ -102,7 +110,7 @@ class TxBody(object):
                 inputs.append(f"--tx-in-datum-file {_input['datum']} \\")
 
         outputs = []
-        for addr, output in self.__outputs.items():
+        for addr, output in self.outputs.items():
             tokens = []
             for asset, amount in output["value"].items():
                 tokens.append(f"{amount} {asset}")
@@ -115,7 +123,7 @@ class TxBody(object):
                     f"--tx-out-datum-embed-file {output['datum']} \\")
 
         tokens = []
-        for asset, amount in self.__mint_value.items():
+        for asset, amount in self.mint_value.items():
             tokens.append(f"{amount} {asset}")
 
         mints = []
@@ -124,33 +132,33 @@ class TxBody(object):
 
             mints.append(f"--mint=\"{parsed_tokens}\" \\")
 
-            for item in self.__mint_scripts:
+            for item in self.mint_scripts:
                 mints.append(f"--mint-script-file {item['script']} \\")
                 mints.append(f"--mint-redeemer-file {item['redeemer']} \\")
 
         required_signer_hash = []
-        if self.__required_signer:
+        if self.required_signer:
             required_signer_hash.append(
-                f"--required-signer-hash {self.__required_signer} \\")
+                f"--required-signer-hash {self.required_signer} \\")
 
         collateral = []
-        if self.__collateral:
+        if self.collateral:
             collateral.append(
-                f"--tx-in-collateral {self.__collateral['hash']}#{self.__collateral['index']} \\")
+                f"--tx-in-collateral {self.collateral['hash']}#{self.collateral['index']} \\")
 
         metadata = []
-        if self.__metadata_path:
-            metadata.append(f"--metadata-json-file {self.__metadata_path} \\")
+        if self.metadata_path:
+            metadata.append(f"--metadata-json-file {self.metadata_path} \\")
 
         cli_body = "\n".join(map(lambda x: "  " + x, [
             f"--cddl-format \\",
-            f"--{self.__era}-era \\",
-            f"--testnet-magic {self.__magic} \\",
+            f"--{self.era}-era \\",
+            f"--testnet-magic {self.magic} \\",
             *inputs,
             *required_signer_hash,
             *collateral,
             *outputs,
-            f"--change-address {self.__change} \\",
+            f"--change-address {self.change} \\",
             *mints,
             *metadata,
             f"--protocol-params-file {protocol_parameters_file} \\",
@@ -171,7 +179,7 @@ class TxBody(object):
             "cardano-cli transaction sign \\",
             f"--tx-body-file {tx_body} \\",
             *parsed_keys,
-            f"--testnet-magic {self.__magic} \\",
+            f"--testnet-magic {self.magic} \\",
             f"--out-file {out}"
         ])
 
@@ -191,7 +199,41 @@ class TxBody(object):
         cli = "\n".join([
             "cardano-cli transaction submit \\",
             f"--tx-file {tx_sig} \\",
-            f"--testnet-magic {self.__magic}",
+            f"--testnet-magic {self.magic}",
         ])
 
         return cli
+
+    @staticmethod
+    def build(era: str, magic: str, inputs: List[TxOutRef], change_address: str,
+              outputs: List[Dict[str, str | Value]], metadata_path: str) -> TxBody:
+        """
+        Builds common shelley cardano transaction bodies given certain arguments.
+
+        Args:
+            era: The era in which this transaction should be built. (e.g. alonzo)
+            magic: The current magic number. (e.g. 1097911063)
+            inputs: The list of TxOutRef UTxOs that will be used as inputs
+            change_address: The address that will receive the change
+            outputs: The list of address, value of the receivers in the format {"address": <addr>, "value": <value>}
+            metadata_path: The path for the metadata json file
+
+        Returns:
+            The corresponding TxBody
+        """
+        body = TxBody(era, magic)
+
+        for _input in inputs:
+            body.add_input(_input.tx_id, _input.tx_ix)
+        
+        body.add_change(change_address)
+
+        for output in outputs:
+            address: str = output["address"]
+            value: Value = output["value"]
+
+            body.add_output(address, value)
+
+        body.set_metadata(metadata_path)
+
+        return body
