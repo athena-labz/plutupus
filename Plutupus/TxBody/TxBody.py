@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 from typing import List, Dict
 
 from Plutupus.Types.TxOutRef import TxOutRef
@@ -204,6 +206,30 @@ class TxBody(object):
 
         return cli
 
+    def calculate_min_utxo(self: TxBody, receiver: str, value: Value,
+                           datum_path: str, protocol_params_path: str) -> int:
+        output = []
+
+        tokens = []
+        for asset, amount in value.value.items():
+            tokens.append(f"{amount} {asset}")
+
+        parsed_tokens = " + ".join(tokens)
+
+        output.append(f"--tx-out \"{receiver} {parsed_tokens}\" \\")
+        if datum_path is not None:
+            output.append(
+                f"--tx-out-datum-embed-file {datum_path} \\")
+
+        cli = "\n".join([
+            "cardano-cli transaction calculate-min-required-utxo \\",
+            f"--{self.era}-era \\",
+            f"--protocol-params-file {protocol_params_path} \\",
+            *output,
+        ]).rstrip(" \\")
+
+        return cli
+
     @staticmethod
     def build(era: str, magic: str, inputs: List[TxOutRef], change_address: str,
               outputs: List[Dict[str, str | Value]], metadata_path: str) -> TxBody:
@@ -225,7 +251,7 @@ class TxBody(object):
 
         for _input in inputs:
             body.add_input(_input.tx_id, _input.tx_ix)
-        
+
         body.add_change(change_address)
 
         for output in outputs:
