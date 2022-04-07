@@ -232,7 +232,7 @@ class TxBody(object):
 
     @staticmethod
     def build(era: str, magic: str, inputs: List[TxOutRef], change_address: str,
-              outputs: List[Dict[str, str | Value]], metadata_path: str) -> TxBody:
+              outputs: List[Dict[str, str | Value]], metadata_path: str | None = None) -> TxBody:
         """
         Builds common shelley cardano transaction bodies given certain arguments.
 
@@ -260,6 +260,7 @@ class TxBody(object):
 
             body.add_output(address, value)
 
-        body.set_metadata(metadata_path)
+        if metadata_path is not None:
+            body.set_metadata(metadata_path)
 
         return body
