@@ -1,6 +1,6 @@
 import json
 
-from Types.utils import token_to_hex
+from Plutupus.Types.utils import token_to_hex
 
 
 class BuiltinByteString(object):

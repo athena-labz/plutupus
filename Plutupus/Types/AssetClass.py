@@ -1,7 +1,7 @@
 import json
 
-from Types.TokenName import TokenName
-from Types.CurrencySymbol import CurrencySymbol
+from Plutupus.Types.TokenName import TokenName
+from Plutupus.Types.CurrencySymbol import CurrencySymbol
 
 
 class AssetClass(object):

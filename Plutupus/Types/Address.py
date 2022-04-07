@@ -1,6 +1,6 @@
 import json
 
-from Types.PubKeyHash import PubKeyHash
+from Plutupus.Types.PubKeyHash import PubKeyHash
 
 
 class Address(object):

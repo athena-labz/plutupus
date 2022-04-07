@@ -1,11 +1,11 @@
 import copy
 import json
 
-from Types.AssetClass import AssetClass
-from Types.CurrencySymbol import CurrencySymbol
-from Types.TokenName import TokenName
-from Types.AssocMap import AssocMap
-from Types.Integer import Integer
+from Plutupus.Types.AssetClass import AssetClass
+from Plutupus.Types.CurrencySymbol import CurrencySymbol
+from Plutupus.Types.TokenName import TokenName
+from Plutupus.Types.AssocMap import AssocMap
+from Plutupus.Types.Integer import Integer
 
 
 class Value(object):
