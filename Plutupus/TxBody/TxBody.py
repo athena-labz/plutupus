@@ -206,8 +206,11 @@ class TxBody(object):
 
         return cli
 
-    def calculate_min_utxo(self: TxBody, receiver: str, value: Value,
-                           datum_path: str, protocol_params_path: str) -> int:
+    @staticmethod
+    def calculate_min_utxo(
+        receiver: str, value: Value, protocol_params_path: str,
+        datum_path: str | None = None
+    ) -> int:
         output = []
 
         tokens = []
@@ -223,7 +226,6 @@ class TxBody(object):
 
         cli = "\n".join([
             "cardano-cli transaction calculate-min-required-utxo \\",
-            f"--{self.era}-era \\",
             f"--protocol-params-file {protocol_params_path} \\",
             *output,
         ]).rstrip(" \\")

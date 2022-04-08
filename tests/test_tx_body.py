@@ -46,8 +46,6 @@ def test_build():
 
 
 def test_calculate_min_utxo():
-    body = TxBody("alonzo", "42")
-
     receiver = "addr_testabc"
 
     value = Value()
@@ -59,19 +57,14 @@ def test_calculate_min_utxo():
 
     datum_path = "/path/to/datum"
 
-    print(body.calculate_min_utxo(
-        receiver, value, datum_path, "path/to/protocol.json"))
-    
     # cardano-cli transaction calculate-min-required-utxo \
-    # --alonzo-era \
     # --protocol-params-file path/to/protocol.json \
     # --tx-out "addr_testabc 13000000 lovelace + 5000000 abc123.444444 + 3000000 def456.555555 + 17000000 def456.666666" \
     # --tx-out-datum-embed-file /path/to/datum \
 
-    assert body.calculate_min_utxo(
-        receiver, value, datum_path, "path/to/protocol.json") == "\n".join([
+    assert TxBody.calculate_min_utxo(
+        receiver, value, "path/to/protocol.json", datum_path) == "\n".join([
             "cardano-cli transaction calculate-min-required-utxo \\",
-            "--alonzo-era \\",
             "--protocol-params-file path/to/protocol.json \\",
             '--tx-out "addr_testabc 13000000 lovelace + 5000000 abc123.444444 + 3000000 def456.555555 + 17000000 def456.666666" \\',
             "--tx-out-datum-embed-file /path/to/datum"
