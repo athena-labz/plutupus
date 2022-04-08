@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import copy
 import json
 
@@ -95,13 +97,17 @@ class Value(object):
                         value.add_token_amount(f"{currency}.{name}", amount)
 
         return value
-    
+
     @staticmethod
-    def lovelace(amount):
+    def from_token(asset: str, amount: int) -> Value:
         value = Value()
-        value.add_token_amount("lovelace", amount)
+        value.add_token_amount(asset, amount)
         
         return value
+    
+    @staticmethod
+    def lovelace(amount: int) -> Value:
+        return Value.from_token("lovelace", amount)
 
     @staticmethod
     def add_values(value_1, value_2):
