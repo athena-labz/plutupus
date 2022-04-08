@@ -29,10 +29,8 @@ class TxBody(object):
         # pubkeyhash
         self.required_signer = None
 
-        # outputs
-        self.outputs = {}
+        self.outputs = []
 
-        # mint
         self.mint_scripts = []
         self.mint_value = {}
 
@@ -66,16 +64,18 @@ class TxBody(object):
         self.required_signer = pubkeyhash
 
     def add_output(self, receiver, value):
-        self.outputs[receiver] = {
+        self.outputs.append({
+            "address": receiver,
             "value": value.get(),
             "datum": None
-        }
+        })
 
     def add_output_with_datum(self, receiver, value, datum_path):
-        self.outputs[receiver] = {
+        self.outputs.append({
+            "address": receiver,
             "value": value.get(),
             "datum": datum_path
-        }
+        })
 
     def add_mint_script(self, script_path, redeemer_path):
         self.mint_scripts.append({
@@ -112,14 +112,14 @@ class TxBody(object):
                 inputs.append(f"--tx-in-datum-file {_input['datum']} \\")
 
         outputs = []
-        for addr, output in self.outputs.items():
+        for output in self.outputs:
             tokens = []
             for asset, amount in output["value"].items():
                 tokens.append(f"{amount} {asset}")
 
             parsed_tokens = " + ".join(tokens)
 
-            outputs.append(f"--tx-out \"{addr} {parsed_tokens}\" \\")
+            outputs.append(f"--tx-out \"{output['address']} {parsed_tokens}\" \\")
             if output["datum"] is not None:
                 outputs.append(
                     f"--tx-out-datum-embed-file {output['datum']} \\")
@@ -210,7 +210,7 @@ class TxBody(object):
     def calculate_min_utxo(
         receiver: str, value: Value, protocol_params_path: str,
         datum_path: str | None = None
-    ) -> int:
+    ) -> str:
         output = []
 
         tokens = []

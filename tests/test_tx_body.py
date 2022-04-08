@@ -28,20 +28,22 @@ def test_build():
         "index": "tx_ix_2"
     }]
     assert body.change == "sender_address"
-    assert body.outputs == {
-        "receiver_address_1": {
+    assert body.outputs == [
+        {
+            "address": "receiver_address_1",
             "value": {
                 "lovelace": 5_000_000
             },
             "datum": None
         },
-        "receiver_address_2": {
+        {
+            "address": "receiver_address_2",
             "value": {
                 "lovelace": 7_000_000
             },
             "datum": None
         }
-    }
+    ]
     assert body.metadata_path == "path/to/metadata"
 
 
