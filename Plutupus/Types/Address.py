@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 
 from Plutupus.Types.PubKeyHash import PubKeyHash
@@ -5,7 +7,7 @@ from Plutupus.Types.PubKeyHash import PubKeyHash
 
 class Address(object):
 
-    def __init__(self, _hash):
+    def __init__(self, _hash: PubKeyHash):
         if type(_hash) is not PubKeyHash:
             raise ValueError(f"Argument {_hash} not of type PubKeyHash")
 

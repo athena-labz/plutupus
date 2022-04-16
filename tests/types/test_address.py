@@ -61,5 +61,3 @@ def test_address_failure():
                 }
             ]
         })
-
-# TODO: Add other tests
