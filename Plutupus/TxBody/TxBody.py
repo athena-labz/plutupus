@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import json
+import logging
 
-from typing import List, Dict
+from typing import Any
 
 from Plutupus.Types.TxOutRef import TxOutRef
 from Plutupus.Types.Value import Value
@@ -10,46 +10,50 @@ from Plutupus.Types.Value import Value
 
 class TxBody(object):
 
-    def __init__(self, era, magic):
-        self.era = era
-        self.magic = magic
-
-        self.setup()
-
-    def setup(self):
-        # utxo
+    def __init__(self):
+        # utxo {"hash": <txid>, "index": <txix>}
         self.collateral = None
 
-        # list of utxos
-        self.inputs = []
+        # list of utxos {"hash": <txid>, "index": <txix>}
+        self.inputs: list[dict[str, str]] = []
 
-        # address
+        # bech32 address of the person who will receive the remaining ADA
         self.change = None
 
         # pubkeyhash
         self.required_signer = None
 
-        self.outputs = []
+        self.outputs: list[dict] = []
 
-        self.mint_scripts = []
-        self.mint_value = {}
+        self.mint_scripts: list[dict[str, str]] = []
+        self.mint_value = None
 
         self.metadata_path = None
 
-    def add_collateral(self, txhash, txix):
+    def set_collateral(self, txhash: str, txix: str):
+        if self.collateral is not None:
+            logging.warning(
+                "Replacing existing collateral "
+                f"{self.collateral['hash']}#{self.collateral['index']} "
+                f"with {txhash}#{txix}"
+            )
+
         self.collateral = {
             "hash": txhash,
             "index": txix
         }
 
-    def add_input(self, txhash, txix):
+    def add_input(self, txhash: str, txix: str):
         self.inputs.append({
+            "type": "no-script",
             "hash": txhash,
             "index": txix
         })
 
-    def add_script_input(self, txhash, txix, script_path, redeemer_path, datum_path):
+    def add_script_input(self, txhash: str, txix: str, script_path: str,
+                         redeemer_path: str, datum_path: str):
         self.inputs.append({
+            "type": "script",
             "hash": txhash,
             "index": txix,
             "script": script_path,
@@ -57,42 +61,45 @@ class TxBody(object):
             "datum": datum_path
         })
 
-    def add_change(self, addr):
+    def set_change(self, addr: str):
+        if self.change is not None:
+            logging.warning(
+                f"Replacing existing change address {self.change} {addr}")
+
         self.change = addr
 
-    def add_required_signer(self, pubkeyhash):
+    def set_required_signer(self, pubkeyhash: str):
         self.required_signer = pubkeyhash
 
-    def add_output(self, receiver, value):
+    def add_output(self, receiver: str, value: Value):
         self.outputs.append({
+            "type": "no-script",
             "address": receiver,
-            "value": value.get(),
-            "datum": None
+            "value": value.get()
         })
 
-    def add_output_with_datum(self, receiver, value, datum_path):
+    def add_output_with_datum(self, receiver: str, value: Value, datum_path: str):
         self.outputs.append({
+            "type": "script",
             "address": receiver,
             "value": value.get(),
             "datum": datum_path
         })
 
-    def add_mint_script(self, script_path, redeemer_path):
+    def add_mint_script(self, script_path: str, redeemer_path: str):
         self.mint_scripts.append({
             "script": script_path,
             "redeemer": redeemer_path
         })
 
-    def set_mint_value(self, value):
+    def set_mint_value(self, value: Value):
         self.mint_value = value.get()
 
-    def set_metadata(self, metadata_path):
+    def set_metadata(self, metadata_path: str):
         self.metadata_path = metadata_path
 
-    def get(self):
+    def get(self) -> dict[str, Any]:
         return {
-            "era": self.era,
-            "magic": self.magic,
             "collateral": self.collateral,
             "inputs": self.inputs,
             "change": self.change,
@@ -102,14 +109,35 @@ class TxBody(object):
             "mint_value": self.mint_value
         }
 
-    def cli(self, protocol_parameters_file, out_file):
+    def cli(self, magic: str, protocol_parameters_file: str, out_file: str,
+            cddl_mode: bool = False) -> str:
+        # Make sure our cli is valid (at least the validations
+        # we can do without a node)
+
+        # See if we have the minimum arguments (input, output, change)
+        if self.inputs == [] or self.outputs == [] or self.change is None:
+            raise ValueError(
+                "Transaction missing one of the required parameters: input, output or change")
+
+        # If we have any script, make sure we also have a collateral
+        if self.collateral is None and \
+                (any([_input["type"] == "script" for _input in self.inputs]) or
+                 any([output["type"] == "script" for output in self.outputs])):
+            raise ValueError(
+                "Transaction has scripts, but collateral is not set!")
+
+        # If we have mint scripts but no mint value should fail
+        if self.mint_scripts != [] and self.mint_value is None:
+            raise ValueError("Mint script added, but no mint value defined!")
+
         inputs = []
         for _input in self.inputs:
             inputs.append(f"--tx-in {_input['hash']}#{_input['index']} \\")
             if "script" in _input and "redeemer" in _input and "datum" in _input:
-                inputs.append(f"--tx-in-script-file {_input['script']} \\")
-                inputs.append(f"--tx-in-redeemer-file {_input['redeemer']} \\")
-                inputs.append(f"--tx-in-datum-file {_input['datum']} \\")
+                inputs.append(f"    --tx-in-script-file {_input['script']} \\")
+                inputs.append(
+                    f"    --tx-in-redeemer-file {_input['redeemer']} \\")
+                inputs.append(f"    --tx-in-datum-file {_input['datum']} \\")
 
         outputs = []
         for output in self.outputs:
@@ -119,24 +147,25 @@ class TxBody(object):
 
             parsed_tokens = " + ".join(tokens)
 
-            outputs.append(f"--tx-out \"{output['address']} {parsed_tokens}\" \\")
-            if output["datum"] is not None:
+            outputs.append(
+                f"--tx-out \"{output['address']} {parsed_tokens}\" \\")
+            if "datum" in output:
                 outputs.append(
-                    f"--tx-out-datum-embed-file {output['datum']} \\")
-
-        tokens = []
-        for asset, amount in self.mint_value.items():
-            tokens.append(f"{amount} {asset}")
+                    f"    --tx-out-datum-embed-file {output['datum']} \\")
 
         mints = []
-        if len(tokens) > 0:
+        if self.mint_value is not None:
+            tokens = []
+            for asset, amount in self.mint_value.items():
+                tokens.append(f"{amount} {asset}")
+
             parsed_tokens = " + ".join(tokens)
 
             mints.append(f"--mint=\"{parsed_tokens}\" \\")
 
             for item in self.mint_scripts:
-                mints.append(f"--mint-script-file {item['script']} \\")
-                mints.append(f"--mint-redeemer-file {item['redeemer']} \\")
+                mints.append(f"    --mint-script-file {item['script']} \\")
+                mints.append(f"    --mint-redeemer-file {item['redeemer']} \\")
 
         required_signer_hash = []
         if self.required_signer:
@@ -152,10 +181,9 @@ class TxBody(object):
         if self.metadata_path:
             metadata.append(f"--metadata-json-file {self.metadata_path} \\")
 
-        cli_body = "\n".join(map(lambda x: "  " + x, [
-            f"--cddl-format \\",
-            f"--{self.era}-era \\",
-            f"--testnet-magic {self.magic} \\",
+        cli_body = "\n".join(map(lambda x: "    " + x, [
+            f"--cddl-format \\" if cddl_mode else f"--cli-format \\",
+            f"--testnet-magic {magic} \\",
             *inputs,
             *required_signer_hash,
             *collateral,
@@ -172,89 +200,27 @@ class TxBody(object):
             cli_body
         ])
 
-    def sign(self, tx_body, skeys, out):
-        parsed_keys = []
-        for skey in skeys:
-            parsed_keys.append(f"--signing-key-file {skey} \\")
-
-        cli = "\n".join([
-            "cardano-cli transaction sign \\",
-            f"--tx-body-file {tx_body} \\",
-            *parsed_keys,
-            f"--testnet-magic {self.magic} \\",
-            f"--out-file {out}"
-        ])
-
-        return cli
-
-    def assemble(self, tx_body, tx_witness, out):
-        cli = "\n".join([
-            "cardano-cli transaction assemble \\",
-            f"--tx-body-file {tx_body} \\",
-            f"--witness-file {tx_witness} \\",
-            f"--out-file {out}",
-        ])
-
-        return cli
-
-    def submit(self, tx_sig):
-        cli = "\n".join([
-            "cardano-cli transaction submit \\",
-            f"--tx-file {tx_sig} \\",
-            f"--testnet-magic {self.magic}",
-        ])
-
-        return cli
-
     @staticmethod
-    def calculate_min_utxo(
-        receiver: str, value: Value, protocol_params_path: str,
-        datum_path: str | None = None
-    ) -> str:
-        output = []
-
-        tokens = []
-        for asset, amount in value.value.items():
-            tokens.append(f"{amount} {asset}")
-
-        parsed_tokens = " + ".join(tokens)
-
-        output.append(f"--tx-out \"{receiver} {parsed_tokens}\" \\")
-        if datum_path is not None:
-            output.append(
-                f"--tx-out-datum-embed-file {datum_path} \\")
-
-        cli = "\n".join([
-            "cardano-cli transaction calculate-min-required-utxo \\",
-            f"--protocol-params-file {protocol_params_path} \\",
-            *output,
-        ]).rstrip(" \\")
-
-        return cli
-
-    @staticmethod
-    def build(era: str, magic: str, inputs: List[TxOutRef], change_address: str,
-              outputs: List[Dict[str, str | Value]], metadata_path: str | None = None) -> TxBody:
+    def build(change_address: str, inputs: list[TxOutRef], outputs: list[dict[str, str | Value]],
+              metadata_path: str | None = None) -> TxBody:
         """
         Builds common shelley cardano transaction bodies given certain arguments.
 
         Args:
-            era: The era in which this transaction should be built. (e.g. alonzo)
-            magic: The current magic number. (e.g. 1097911063)
-            inputs: The list of TxOutRef UTxOs that will be used as inputs
             change_address: The address that will receive the change
+            inputs: The list of TxOutRef UTxOs that will be used as inputs
             outputs: The list of address, value of the receivers in the format {"address": <addr>, "value": <value>}
             metadata_path: The path for the metadata json file
 
         Returns:
             The corresponding TxBody
         """
-        body = TxBody(era, magic)
+        body = TxBody()
 
         for _input in inputs:
             body.add_input(_input.tx_id, _input.tx_ix)
 
-        body.add_change(change_address)
+        body.set_change(change_address)
 
         for output in outputs:
             address: str = output["address"]
