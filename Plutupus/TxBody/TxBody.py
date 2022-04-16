@@ -199,36 +199,3 @@ class TxBody(object):
             "cardano-cli transaction build \\",
             cli_body
         ])
-
-    @staticmethod
-    def build(change_address: str, inputs: list[TxOutRef], outputs: list[dict[str, str | Value]],
-              metadata_path: str | None = None) -> TxBody:
-        """
-        Builds common shelley cardano transaction bodies given certain arguments.
-
-        Args:
-            change_address: The address that will receive the change
-            inputs: The list of TxOutRef UTxOs that will be used as inputs
-            outputs: The list of address, value of the receivers in the format {"address": <addr>, "value": <value>}
-            metadata_path: The path for the metadata json file
-
-        Returns:
-            The corresponding TxBody
-        """
-        body = TxBody()
-
-        for _input in inputs:
-            body.add_input(_input.tx_id, _input.tx_ix)
-
-        body.set_change(change_address)
-
-        for output in outputs:
-            address: str = output["address"]
-            value: Value = output["value"]
-
-            body.add_output(address, value)
-
-        if metadata_path is not None:
-            body.set_metadata(metadata_path)
-
-        return body

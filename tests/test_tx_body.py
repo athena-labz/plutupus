@@ -220,7 +220,6 @@ def test_cli():
     ])
 
     # Body with everything combined
-
     body = TxBody()
     body.set_collateral("hash", "index")
     body.add_input("hash1", "index1")
@@ -255,45 +254,3 @@ def test_cli():
         "    --protocol-params-file protocol_params \\",
         "    --out-file out_file"
     ])
-
-
-def test_build():
-    body = TxBody.build(
-        "sender_address",
-        [TxOutRef("tx_hash_1", "tx_ix_1"), TxOutRef("tx_hash_2", "tx_ix_2")],
-        [
-            {"address": "receiver_address_1",
-                "value": Value.lovelace(5_000_000)},
-            {"address": "receiver_address_2",
-                "value": Value.lovelace(7_000_000)}
-        ],
-        "path/to/metadata"
-    )
-
-    assert body.inputs == [{
-        "type": "no-script",
-        "hash": "tx_hash_1",
-        "index": "tx_ix_1",
-    }, {
-        "type": "no-script",
-        "hash": "tx_hash_2",
-        "index": "tx_ix_2",
-    }]
-    assert body.change == "sender_address"
-    assert body.outputs == [
-        {
-            "type": "no-script",
-            "address": "receiver_address_1",
-            "value": {
-                "lovelace": 5_000_000
-            },
-        },
-        {
-            "type": "no-script",
-            "address": "receiver_address_2",
-            "value": {
-                "lovelace": 7_000_000
-            },
-        }
-    ]
-    assert body.metadata_path == "path/to/metadata"
