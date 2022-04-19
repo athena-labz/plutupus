@@ -114,6 +114,21 @@ class BaseMap(Abstract):
             first = False
 
         self._dct = dct
+        self.key_type, self.value_type = key_type, value_type
+
+    def add(self, key: Abstract, value: Abstract):
+        if self.key_type is not None and type(key) != self.key_type:
+            raise ValueError(
+                f"Received key type does not match expected map key type!")
+
+        if self.value_type is not None and type(value) != self.value_type:
+            raise ValueError(
+                f"Received value type does not match expected map value type!")
+        
+        self._dct[key] = value
+
+    def remove(self, key: Abstract):
+        del self._dct[key]
 
     def get(self):
         return {key.get(): value.get() for key, value in self._dct.items()}

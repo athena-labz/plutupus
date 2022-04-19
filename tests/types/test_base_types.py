@@ -121,3 +121,15 @@ def test_map():
             {"v": {"int": 97}, "k": {"bytes": "prime"}}
         ]
     }) == bmap
+
+    bm = BaseMap({BaseBytes("hello"): BaseBytes("there")})
+    bm.add(BaseBytes("bonjour"), BaseBytes("monsieur"))
+
+    assert bm == BaseMap({
+        BaseBytes("hello"): BaseBytes("there"),
+        BaseBytes("bonjour"): BaseBytes("monsieur")
+    })
+
+    bm.remove(BaseBytes("hello"))
+
+    assert bm == BaseMap({BaseBytes("bonjour"): BaseBytes("monsieur")})
