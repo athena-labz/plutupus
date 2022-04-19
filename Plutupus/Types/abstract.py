@@ -24,21 +24,13 @@ class Abstract(object):
         }
 
         for name, value in self.properties.items():
-            result["fields"].append(value.json())
+            result["fields"].append(json.loads(value.json()))
 
         return result
 
     @staticmethod
     def from_json(_json: dict[str, Any]):
         raise NotImplementedError()
-        # if "fields" not in _json or not len(_json["fields"]) or \
-        #     "fields" not in _json["fields"][0] or \
-        #         not len(_json["fields"][0]["fields"]):
-        #     raise ValueError(
-        #         "JSON received does not conform to plutus spec or is not a pubkeyhash")
-
-        # pkh_bytes = _json["fields"][0]["fields"][0]
-        # return Address(PubKeyHash.from_json(_json["fields"][0]["fields"][0]))
 
     def __eq__(self, other):
         if isinstance(other, Abstract):

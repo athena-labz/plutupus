@@ -66,8 +66,6 @@ class BaseList(Abstract):
     def __init__(self, lst: list[Abstract]):
         super().__init__()
 
-        # TODO: Make sure all list has same type
-
         self._lst = lst
 
     def get(self):
