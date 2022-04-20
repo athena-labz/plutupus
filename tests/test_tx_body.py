@@ -86,6 +86,29 @@ def test_build_methods():
     assert body.metadata_path == "metadata"
 
 
+def test_send_to_address():
+    body = TxBody.send_to_address("hash#ix", "addr_inp", "addr_out", Value.from_dictionary({
+        "lovelace": 10_000_000,
+        "policy.token": 5
+    }))
+
+    assert body.inputs == [{
+        "type": "no-script",
+        "hash": "hash",
+        "index": "ix"
+    }]
+
+    assert body.change == "addr_inp"
+    assert body.outputs == [{
+        "type": "no-script",
+        "address": "addr_out",
+        "value": {
+            "lovelace": 10_000_000,
+            "policy.token": 5
+        }
+    }]
+
+
 def test_get():
     body = TxBody()
 

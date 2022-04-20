@@ -199,3 +199,19 @@ class TxBody(object):
             "cardano-cli transaction build \\",
             cli_body
         ])
+
+    @staticmethod
+    def send_to_address(input_utxo: str, input_address: str,
+                        output_address: str, value: Value) -> TxBody:
+        body = TxBody()
+
+        splitted = input_utxo.split("#")
+        assert len(splitted) == 2
+
+        tx_hash, tx_ix = splitted
+
+        body.add_input(tx_hash, tx_ix)
+        body.set_change(input_address)
+        body.add_output(output_address, value)
+
+        return body
