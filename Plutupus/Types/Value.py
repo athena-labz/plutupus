@@ -21,7 +21,7 @@ class Value(object):
             if amount == 0:
                 del self.value[asset]
 
-    def add_value(self, value):
+    def add_value(self, value: Value):
         for asset, amount in value.value.items():
             self.add_token_amount(asset, amount)
 
